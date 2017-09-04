@@ -72,13 +72,18 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     // first measurement
     cout << "EKF: " << endl;
     ekf_.x_ = VectorXd(4);
-    ekf_.x_ << 1, 1, 1, 1;
+    ekf_.x_ << 1, 1, 0, 10;
 
     ekf_.F_ = MatrixXd(4,4);
     ekf_.F_ << 1, 0, 0, 0,
                0, 1, 0, 0,
                0, 0, 1, 0,
                0, 0, 0, 1;
+    ekf_.Q_ = MatrixXd::Zero(4,4);
+    ekf_.P_ << 1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 10, 0,
+              0, 0, 0, 10;
 
     previous_timestamp_ = measurement_pack.timestamp_;
 
@@ -125,16 +130,15 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   double dt = (measurement_pack.timestamp_ - previous_timestamp_)/1000000.0; // delta_t in seconds
   previous_timestamp_ = measurement_pack.timestamp_;
 
-  double dt_2 = pow(dt, 2.0);
+  double dt_2 = dt*dt;
   double dt_3 = dt_2*dt;
   double dt_4 = dt_3*dt;
-  float noise_ax = 9;
-  float noise_ay = 9;
+  double noise_ax = 9;
+  double noise_ay = 9;
 
   ekf_.F_(0,2) = dt;
   ekf_.F_(1,3) = dt;
 
-  ekf_.Q_ = MatrixXd::Zero(4,4);
   ekf_.Q_ << dt_4*noise_ax/4, 0, dt_3*noise_ax/2, 0,
              0, dt_4*noise_ay/4, 0, dt_3*noise_ay/2,
              dt_3*noise_ax/2, 0, dt_2*noise_ax, 0,
